@@ -35,17 +35,19 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
   private final Matrix4 viewMatrix;
   private final JWavefrontObject caja;
   private final JWavefrontObject pared;
+  private final JWavefrontObject base;
+  private final JWavefrontObject estante;  
   private final Light light;
   private float alpha;
   private float beta;
   private float delta;
+  private float omega;
   private int height;
   private int width;
   private int LADO = 10;
   private int LARGO = 47;
   private int ANCHO = 28;
   private int ALTURA = 3;
-  private int c = 1;
   private String[][] local;
    public Scene03() 
    {
@@ -57,9 +59,12 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
 
         caja = new JWavefrontObject(new File("./warehouse/caja.obj"));
         pared = new JWavefrontObject(new File("./warehouse/pared.obj"));
+        base = new JWavefrontObject(new File("./warehouse/base.obj"));
+        estante = new JWavefrontObject(new File("./warehouse/estante.obj"));
         light = new Light();
         alpha = 0;
         beta = 0;
+        omega=0;
         delta = 5;
         this.local = new String[][]{
                             {
@@ -237,10 +242,26 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
     viewMatrix.init(gl, shader.getUniformLocation("u_viewMatrix"));
 
     try {
-      //init the model
+      //init the model caja
       caja.init(gl, shader);
       caja.unitize();
       caja.dump();
+      
+      //init the model pared
+      pared.init(gl, shader);
+      pared.unitize();
+      pared.dump();
+      
+      //init the model cuadro
+      base.init(gl, shader);
+      base.unitize();
+      base.dump();
+      
+      //init the model estante
+      estante.init(gl, shader);
+      estante.unitize();
+      estante.dump();
+      
     } catch (IOException ex) {
       Logger.getLogger(Scene03.class.getName()).log(Level.SEVERE, null, ex);
     }
@@ -258,7 +279,7 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
     float x;
     float y;
     float z;
-    Punto(int xo,int yo,int zo)
+    Punto(float xo,float yo,float zo)
     {
         x=xo;
         y=yo;
@@ -274,21 +295,82 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
   {   
       viewMatrix.lookAt(p.x, p.y, p.z, pos.x, pos.y, pos.z, 0, 1, 0);
   }
+    public void drawCaja (float  x, float y, float z)
+    {
+        modelMatrix.push();
+            modelMatrix.translate(x, y, z);
+            modelMatrix.bind();
+            caja.draw();
+        modelMatrix.pop();
+    }   
+    public void drawEstante (int x, int y, int z)
+    {
+        if (y == 0)
+        {
+            modelMatrix.push();
+                modelMatrix.translate(x, y, z);
+                modelMatrix.bind();
+                base.draw();
+            modelMatrix.pop();
+        }
+        if (x == 5 || x == 11 || x == 17 || x == 23)
+        {
+            modelMatrix.push();
+                modelMatrix.translate(x, y, z);
+                modelMatrix.rotate(180, 0, 1, 0);
+                modelMatrix.bind();
+                estante.draw();
+            modelMatrix.pop();
+        }
+        else
+        {
+            modelMatrix.push();
+                modelMatrix.translate(x, y, z);
+                modelMatrix.bind();
+                estante.draw();
+            modelMatrix.pop();;
+        }
+    }
+    public void drawCuadro (int x, int z, boolean qr)
+    {
+
+    }
+    public void drawPared (int x, int y, int z)
+    {
+        modelMatrix.push();
+            modelMatrix.translate(x, y, z);
+            modelMatrix.bind();
+            pared.draw();
+        modelMatrix.pop();
+    }
+  public void cargarLocal ()
+  {
+        //System.out.println(local[1][2].charAt(5));
+        int i, j, k;
+        for (k = 0 ; k < ALTURA ; k++)
+            for (i = 0 ; i < LARGO ; i++)
+                for (j = 0 ; j < ANCHO ; j++)
+                    if (local[k][i].charAt(j) == '0' || local[k][i].charAt(j) == '2') {
+                        drawCaja(j, k, i);;
+                        if (i < 30)
+                        drawEstante(j, k, i);;
+                    }
+                    else if (local[k][i].charAt(j)== ' ' || local[k][i].charAt(j) == '1' || local[k][i].charAt(j) == '2')
+                        drawEstante(j, k, i);
+                    else if (local[k][i].charAt(j) == '=')
+                            {
+                                    drawPared(j, k, i);;
+                            }
+   }
+
   @Override
   public void display(GLAutoDrawable drawable) {
     // Recupera o pipeline
-    GL3 gl = drawable.getGL().getGL3();
-
+    GL3 gl = drawable.getGL().getGL3();    
     // Limpa o frame buffer com a cor definida
     gl.glClear(GL3.GL_COLOR_BUFFER_BIT | GL3.GL_DEPTH_BUFFER_BIT);
-    /*
+
     // vista general
-    gl.glViewport(0, height/2, width/2, height/2);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 600.0);
-    mirarA({14, 10, 50}, {14, 0, 35});
-    visualizar();*/
     
     //Proyeccion Ortonormal
     /*projectionMatrix.loadIdentity();
@@ -300,29 +382,24 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
 
     //Proyeccion Perspectiva
     projectionMatrix.loadIdentity();
-    projectionMatrix.perspective(50.0f+delta,width/height, 2, 600);
+    projectionMatrix.perspective(60.0f+delta,width/height, 2, 600);
     projectionMatrix.bind();
     
+    viewMatrix.loadIdentity();
+    mirarA(new Punto(14+alpha,12+beta,48+omega),new Punto(14+alpha,2+beta,33+omega));
+    viewMatrix.bind();
+   
+    // Fuente de luz
+    light.bind();
+    
+    //Dibujo de escena Almacen
     modelMatrix.loadIdentity();
+    cargarLocal();
+    /*
     modelMatrix.rotate(beta, 0, 1.0f, 0);
     modelMatrix.rotate(alpha, 1.0f, 0, 0);
     modelMatrix.bind();
-
-    viewMatrix.loadIdentity();
-    /*viewMatrix.lookAt(
-                 4.0f, 1.0f, 8.0f,
-                 0.0f,0.0f,0.0f,
-                 0.0f, 1.0f, 0.0f);*/
-
-    mirarA(new Punto(14, 10,10),new Punto(0, 0, 0));
-    /*viewMatrix.lookAt(
-            1, 1, 1, 
-            0, 0, 0, 
-            0, 1, 0);*/
-    viewMatrix.bind();
-
-    light.bind();
-    caja.draw();
+    caja.draw();*/
     
     // Força execução das operações declaradas
     gl.glFlush();
@@ -335,6 +412,9 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
   @Override
   public void dispose(GLAutoDrawable drawable) {
     caja.dispose();
+    pared.dispose();
+    base.dispose();
+    estante.dispose();
   }
   public KeyListener escucha() {
      KeyListener listener= new KeyListener(){
@@ -345,24 +425,46 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
             public void keyPressed(KeyEvent e) {
               switch (e.getKeyChar()) {
                 case '-'://faz zoom-in
-                  delta = delta + 5.0f;
+                  if(delta<50)
+                    delta = delta + 4.0f;
                   break;
                 case '+'://faz zoom-out
-                  if(delta>-30)
-                  delta = delta - 5.0f;
+                  if(delta>-60)
+                    delta = delta - 4.0f;
                   break;
-                case 'w'://gira sobre o eixo-x
-                  alpha = alpha - 5;
+                case 'w'://
+                  omega = omega - 1;
                   break;
-                case 's'://gira sobre o eixo-x
-                  alpha = alpha + 5;
+                case 's'://
+                  omega = omega + 1;
                   break;
-                case 'a'://gira sobre o eixo-y
-                  beta = beta - 5;
+                case 'a'://
+                  alpha = alpha - 1;
                   break;
-                case 'd'://gira sobre o eixo-y
-                  beta = beta + 5;
+                case 'd'://
+                  alpha = alpha + 1;
                   break;
+                case 'z'://
+                  beta = beta + 1;
+                  break;
+                case 'x'://
+                  beta = beta - 1;
+                  break;
+                /*case '8'://
+                  omega = omega - 1;
+                  break;
+                case '2'://
+                  omega = omega + 1;
+                  break;
+                case '4'://
+                  alpha = alpha - 1;
+                  break;
+                case '6'://
+                  alpha = alpha + 1;  */      
+                case '5'://
+                  alpha=0;
+                  beta=0;
+                  omega=0;
                 default:
                        System.out.println("naniiiiii!!!!");
                        break;
@@ -370,7 +472,7 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
             }
 	    @Override
 	    public void keyReleased(KeyEvent e) {
-		System.out.println("keyReleased="+KeyEvent.getKeyText(e.getKeyCode()));
+		System.out.println("Alfa: "+alpha+" Beta: "+beta+" Omega: "+omega);
 	    }            
      };
      return listener;
