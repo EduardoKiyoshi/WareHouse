@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  *
  * @author JUNIOR
  */
+
 public class Scene03 extends KeyAdapter implements GLEventListener{
     
   private final Shader shader; // Gerenciador dos shaders
@@ -40,6 +41,7 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
   private float delta;
   private int height;
   private int width;
+  private int LADO = 10;
   private int LARGO = 47;
   private int ANCHO = 28;
   private int ALTURA = 3;
@@ -209,11 +211,6 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
                             }
                         };
   }
- public void guardarMedidas(int x,int y)
- {
-     this.width=x;
-     this.height=y;
- }
  @Override
  public void init(GLAutoDrawable drawable) {
     // Get pipeline
@@ -256,7 +253,27 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
     light.init(gl, shader);
     
   }
-
+ public class Punto
+ {
+    float x;
+    float y;
+    float z;
+    Punto(int xo,int yo,int zo)
+    {
+        x=xo;
+        y=yo;
+        z=zo;
+    }
+ };
+ public void guardarMedidas(int x,int y)
+ {
+     this.width=x;
+     this.height=y;
+ }
+  void mirarA (Punto p, Punto pos)
+  {   
+      viewMatrix.lookAt(p.x, p.y, p.z, pos.x, pos.y, pos.z, 0, 1, 0);
+  }
   @Override
   public void display(GLAutoDrawable drawable) {
     // Recupera o pipeline
@@ -264,33 +281,44 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
 
     // Limpa o frame buffer com a cor definida
     gl.glClear(GL3.GL_COLOR_BUFFER_BIT | GL3.GL_DEPTH_BUFFER_BIT);
-    
-    /*// vista general
+    /*
+    // vista general
     gl.glViewport(0, height/2, width/2, height/2);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(-ar, ar, -1.0, 1.0, 2.0, 600.0);
     mirarA({14, 10, 50}, {14, 0, 35});
     visualizar();*/
     
-    projectionMatrix.loadIdentity();
+    //Proyeccion Ortonormal
+    /*projectionMatrix.loadIdentity();
     projectionMatrix.ortho(
             -delta, delta, 
             -delta, delta, 
             -2 * delta, 2 * delta);
-    projectionMatrix.bind();
+    projectionMatrix.bind();*/
 
+    //Proyeccion Perspectiva
+    projectionMatrix.loadIdentity();
+    projectionMatrix.perspective(50.0f+delta,width/height, 2, 600);
+    projectionMatrix.bind();
+    
     modelMatrix.loadIdentity();
     modelMatrix.rotate(beta, 0, 1.0f, 0);
     modelMatrix.rotate(alpha, 1.0f, 0, 0);
     modelMatrix.bind();
 
     viewMatrix.loadIdentity();
-    viewMatrix.lookAt(
+    /*viewMatrix.lookAt(
+                 4.0f, 1.0f, 8.0f,
+                 0.0f,0.0f,0.0f,
+                 0.0f, 1.0f, 0.0f);*/
+
+    mirarA(new Punto(14, 10,10),new Punto(0, 0, 0));
+    /*viewMatrix.lookAt(
             1, 1, 1, 
             0, 0, 0, 
-            0, 1, 0);
+            0, 1, 0);*/
     viewMatrix.bind();
 
     light.bind();
@@ -316,11 +344,12 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
             @Override
             public void keyPressed(KeyEvent e) {
               switch (e.getKeyChar()) {
-                case '+'://faz zoom-in
-                  delta = delta * 0.809f;
+                case '-'://faz zoom-in
+                  delta = delta + 5.0f;
                   break;
-                case '-'://faz zoom-out
-                  delta = delta * 1.1f;
+                case '+'://faz zoom-out
+                  if(delta>-30)
+                  delta = delta - 5.0f;
                   break;
                 case 'w'://gira sobre o eixo-x
                   alpha = alpha - 5;
