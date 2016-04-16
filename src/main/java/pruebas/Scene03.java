@@ -49,6 +49,12 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
   private int ANCHO = 28;
   private int ALTURA = 3;
   private String[][] local;
+  
+  //posicao Inicial do carrinho
+  private int heroPositionX = 14;
+  private int heroPositionY = 24;
+  private StringBuilder[][] novoLocal;
+  
    public Scene03() 
    {
         // Carrega os shaders
@@ -215,6 +221,13 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
                                 "=||||||||||======||||||||||="
                             }
                         };
+        //Inicializa StringBuilder
+        novoLocal = new StringBuilder[local.length][local[0].length];              
+        for(int i = 0; i < local.length;i++){
+            for(int j = 0; j < local[i].length;j++){
+                novoLocal[i][j] = new  StringBuilder( local[i][j] );
+            }
+        }   
   }
  @Override
  public void init(GLAutoDrawable drawable) {
@@ -273,6 +286,25 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
     light.setSpecularColor(new float[]{1.0f, 1.0f, 1.0f, 1.0f });
     light.init(gl, shader);
     
+    
+    //Coloca heroi na posicao inicial
+    novoLocal[0][heroPositionY].replace(heroPositionX,heroPositionX+1, "h");
+    setPositionX(heroPositionX);
+    setPositionY(heroPositionY);
+  }
+ 
+  public void setPositionX(int x){
+      this.heroPositionX += x;
+  }
+  public int getPositionX(){
+      return this.heroPositionX;
+  }
+  
+  public void setPositionY(int y){
+      this.heroPositionY += y;
+  }
+  public int getPositionY(){
+      return this.heroPositionY;
   }
  public class Punto
  {
@@ -423,6 +455,47 @@ public class Scene03 extends KeyAdapter implements GLEventListener{
 	    }        
             @Override
             public void keyPressed(KeyEvent e) {
+              char a_char;
+              int positionY = getPositionY();
+              int positionX = getPositionX();
+              if (e.getKeyCode() == KeyEvent.VK_UP) {                  
+                    if(positionY > 0){
+                        a_char = local[0][positionY - 1].charAt(positionX);
+                        if(a_char == '.' ){
+                                novoLocal[0][positionY].replace(positionX,positionX+1, ".");
+                                novoLocal[0][positionY - 1].replace(positionX,positionX+1, "h");
+                                setPositionY(-1);
+                        }
+                    }
+              }else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                    if(positionY < novoLocal[0].length){
+                        a_char = novoLocal[0][positionY + 1].charAt(positionX);
+                        if(a_char == '.' ){
+                            novoLocal[0][positionY].replace(positionX,positionX+1, ".");
+                            novoLocal[0][positionY+1].replace(positionX,positionX+1, "h");
+                            setPositionY(1);
+                        }
+                    }  
+              }
+              if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    if(positionX > 0){
+                        a_char = novoLocal[0][positionY].charAt(positionX - 1);
+                        if(a_char == '.' ){
+                            novoLocal[0][positionY].replace(positionX,positionX+1, ".");
+                            novoLocal[0][positionY].replace(positionX-1,positionX, "h");
+                            setPositionX(-1);
+                        }
+                    }                    
+              }else if(e.getKeyCode() == KeyEvent.VK_RIGHT){
+                    if(positionX < novoLocal[0][positionY].length()){
+                        a_char = novoLocal[0][positionY].charAt(positionX + 1);
+                        if(a_char == '.' ){
+                            novoLocal[0][positionY].replace(positionX,positionX+1, ".");
+                            novoLocal[0][positionY].replace(positionX+1,positionX + 2, "h");
+                            setPositionX(1);
+                        }
+                    }
+              }  
               switch (e.getKeyChar()) {
                 case '-'://faz zoom-in
                   if(delta<50)
